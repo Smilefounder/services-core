@@ -6,15 +6,17 @@ export const SelectSubscriptionReports = {
     oninit(vnode) {
 
         const reportsExtension = stream('csv');
-        const selectedReportTypes = new Set();
+        const selectedReportTypes = [];
 
         vnode.state = {
             getSelectedReportTypes: () => selectedReportTypes,
             selectReportType: (report_type, checked) => {
-                if (checked) {
-                    selectedReportTypes.add(report_type);
-                } else if (selectedReportTypes.has(report_type)) {
-                    selectedReportTypes.delete(report_type);
+                const isReportTypeIncluded = selectedReportTypes.includes(report_type);
+                if (checked && !isReportTypeIncluded) {
+                    selectedReportTypes.push(report_type);
+                } else if (isReportTypeIncluded) {
+                    const indexOfReportType = selectedReportTypes.indexOf(report_type);
+                    selectedReportTypes.splice(indexOfReportType, 1)
                 }
             },
             reportsExtension,

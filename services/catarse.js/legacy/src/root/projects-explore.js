@@ -22,7 +22,8 @@ import projectCard from '../c/project-card';
 import tooltip from '../c/tooltip';
 import UnsignedFriendFacebookConnect from '../c/unsigned-friend-facebook-connect';
 import userVM from '../vms/user-vm';
-import { loadProjectsWithConfiguredParameters } from '../vms/projects-explore-vm';
+import { loadProjectsWithConfiguredParameters, searchCitiesGroupedByState, CityState } from '../vms/projects-explore-vm';
+import { InputSelectSearchClearable } from '../c/input-select-search-clearable';
 
 const I18nScope = _.partial(h.i18nScope, 'pages.explore');
 // TODO Slim down controller by abstracting logic to view-models where it fits
@@ -164,6 +165,19 @@ const projectsExplore = {
         window.addEventListener('popstate', (event) => loadRoute());
         window.addEventListener('pushstate', (event) => loadRoute());
 
+        const selectedCityState = h.RedrawStream(null);
+        const foundCitiesStateEntries = h.RedrawStream([]);
+        const onSearchCities = async (inputText) => {
+            console.log('inputText', inputText);
+            foundCitiesStateEntries(await searchCitiesGroupedByState(inputText));
+        }
+
+        const onSelectCityState = (cityState) => {
+            console.log('cityState', cityState);
+            // selectedCityState(cityState);
+        }
+        
+
         vnode.state = {
             categories: categoriesCollection,
             changeFilter,
@@ -187,6 +201,10 @@ const projectsExplore = {
             externalLinkCategories,
             changeCategory,
             allCategories,
+            selectedCityState,
+            foundCitiesStateEntries,
+            onSearchCities,
+            onSelectCityState,
         };
     },
     onremove: function() {
@@ -201,6 +219,10 @@ const projectsExplore = {
         const filterKeyName = state.currentFilter().keyName;
         const isContributedByFriendsFilter = (filterKeyName === 'contributed_by_friends');
         const hasSpecialFooter = state.hasSpecialFooter(category_id);
+        const selectedCityState = state.selectedCityState;
+        const foundCitiesStateEntries = state.foundCitiesStateEntries;
+        const onSearchCities = state.onSearchCities;
+        const onSelectCityState = state.onSelectCityState;
 
         const categoryColumn = (categories, start, finish) => _.map(categories.slice(start, finish), category =>
             m(`a.explore-filter-link[href=\'javascript:void(0);\']`, {
@@ -222,134 +244,151 @@ const projectsExplore = {
                   m(search)
                 ),
                 m('.u-text-center.w-container', [
-                    m('.explore-text-fixed',
-                        'Quero ver'
-                    ),
-                    m('.explore-filter-wrapper', [
-                        m('.explore-span-filter', {
-                            onclick: () => state.modeToggle(!state.modeToggle())
-                        }, [
-                            m('.explore-mobile-label',
-                                'MODALIDADE'
-                            ),
-                            m('.inline-block',
-                                state.currentMode().title
-                            ),
-                            m('.inline-block.fa.fa-angle-down')
-                        ]),
-                        (
-                            state.modeToggle() && 
-                                m('.explore-filter-select', [
-                                    m("a.explore-filter-link[href=\'javascript:void(0);\']", {
-                                            onclick: () => {
-                                                state.changeMode('all_modes');
-                                            },
-                                            class: state.currentMode() === null ? 'selected' : ''
-                                        },
-                                        'Todos os projetos'
-                                    ),
-                                    m("a.explore-filter-link[href=\'javascript:void(0);\']", {
-                                            onclick: () => {
-                                                state.changeMode('not_sub');
-                                            },
-                                            class: state.currentMode() === 'not_sub' ? 'selected' : ''
-                                        },
-                                        'Projetos pontuais'
-                                    ),
-                                    m("a.explore-filter-link[href=\'javascript:void(0);\']", {
-                                            onclick: () => {
-                                                state.changeMode('sub');
-                                            },
-                                            class: state.currentMode() === 'sub' ? 'selected' : ''
-                                        },
-                                        'Assinaturas'
-                                    ),
-                                    m('a.modal-close.fa.fa-close.fa-lg.w-hidden-main.w-hidden-medium.w-inline-block', {
-                                        onclick: () => state.modeToggle(false)
-                                    })
-                                ])
-                        )
-                    ]),
-                    m('.explore-text-fixed',
-                        'de'
-                    ),
-                    m('.explore-filter-wrapper', [
-                        m('.explore-span-filter', {
-                            onclick: () => state.categoryToggle(!state.categoryToggle())
-                        }, [
-                            m('.explore-mobile-label',
-                                'CATEGORIA'
-                            ),
-                            m('.inline-block',
-                                state.selectedCategory().name
-                            ),
-                            m('.inline-block.fa.fa-angle-down')
-                        ]),
-                        (
-                            state.categoryToggle() &&
-                            m('.explore-filter-select.big',
-                                m('.explore-filer-select-row', [
-                                    m('.explore-filter-select-col', [
+
+                    m('div', [
+                        m('.explore-text-fixed',
+                            'Quero ver'
+                        ),
+                        m('.explore-filter-wrapper', [
+                            m('.explore-span-filter', {
+                                onclick: () => state.modeToggle(!state.modeToggle())
+                            }, [
+                                m('.explore-mobile-label',
+                                    'MODALIDADE'
+                                ),
+                                m('.inline-block',
+                                    state.currentMode().title
+                                ),
+                                m('.inline-block.fa.fa-angle-down')
+                            ]),
+                            (
+                                state.modeToggle() && 
+                                    m('.explore-filter-select', [
                                         m("a.explore-filter-link[href=\'javascript:void(0);\']", {
                                                 onclick: () => {
-                                                    state.categoryToggle(false);
-                                                    state.changeCategory(allCategories.id);
+                                                    state.changeMode('all_modes');
                                                 },
-                                                class: state.selectedCategory().id === null ? 'selected' : ''
+                                                class: state.currentMode() === null ? 'selected' : ''
                                             },
-                                            'Todas as categorias'
+                                            'Todos os projetos'
                                         ),
-                                        categoryColumn(state.categories(), 0, Math.floor(_.size(state.categories()) / 2))
-                                    ]),
-                                    m('.explore-filter-select-col', [
-                                        categoryColumn(state.categories(), Math.floor(_.size(state.categories()) / 2), _.size(state.categories()))
-                                    ]),
-                                    m('a.modal-close.fa.fa-close.fa-lg.w-hidden-main.w-hidden-medium.w-inline-block', {
-                                        onclick: () => state.categoryToggle(false)
-                                    })
-                                ])
-                            )
-                        )
-                    ]),
-                    (
-                        state.showFilter() && 
-                        [
-                            m('.explore-text-fixed',
-                                'que são'
-                            ),
-                            m('.explore-filter-wrapper', [
-                                m('.explore-span-filter', {
-                                    onclick: () => state.filterToggle(!state.filterToggle())
-                                }, [
-                                    m('.explore-mobile-label',
-                                        'FILTRO'
-                                    ),
-                                    m('.inline-block',
-                                        state.currentFilter().nicename
-                                    ),
-                                    m('.inline-block.fa.fa-angle-down')
-                                ]),
-                                (
-                                    state.filterToggle() &&
-                                    m('.explore-filter-select', [
-                                        _.map(state.projectFiltersVM.getContextFilters(), (pageFilter, idx) => m("a.explore-filter-link[href=\'javascript:void(0);\']", {
-                                                onclick: (/** @type {Event} */ event) => {
-                                                    event.preventDefault();
-                                                    state.changeFilter(pageFilter.keyName);
-                                                    state.filterToggle(false);
+                                        m("a.explore-filter-link[href=\'javascript:void(0);\']", {
+                                                onclick: () => {
+                                                    state.changeMode('not_sub');
                                                 },
-                                                class: state.currentFilter() === pageFilter ? 'selected' : ''
+                                                class: state.currentMode() === 'not_sub' ? 'selected' : ''
                                             },
-                                            pageFilter.nicename
-                                        )),
+                                            'Projetos pontuais'
+                                        ),
+                                        m("a.explore-filter-link[href=\'javascript:void(0);\']", {
+                                                onclick: () => {
+                                                    state.changeMode('sub');
+                                                },
+                                                class: state.currentMode() === 'sub' ? 'selected' : ''
+                                            },
+                                            'Assinaturas'
+                                        ),
                                         m('a.modal-close.fa.fa-close.fa-lg.w-hidden-main.w-hidden-medium.w-inline-block', {
-                                            onclick: () => state.filterToggle(false)
+                                            onclick: () => state.modeToggle(false)
+                                        })
+                                    ])
+                            )
+                        ]),
+                        m('.explore-text-fixed',
+                            'de'
+                        ),
+                        m('.explore-filter-wrapper', [
+                            m('.explore-span-filter', {
+                                onclick: () => state.categoryToggle(!state.categoryToggle())
+                            }, [
+                                m('.explore-mobile-label',
+                                    'CATEGORIA'
+                                ),
+                                m('.inline-block',
+                                    state.selectedCategory().name
+                                ),
+                                m('.inline-block.fa.fa-angle-down')
+                            ]),
+                            (
+                                state.categoryToggle() &&
+                                m('.explore-filter-select.big',
+                                    m('.explore-filer-select-row', [
+                                        m('.explore-filter-select-col', [
+                                            m("a.explore-filter-link[href=\'javascript:void(0);\']", {
+                                                    onclick: () => {
+                                                        state.categoryToggle(false);
+                                                        state.changeCategory(allCategories.id);
+                                                    },
+                                                    class: state.selectedCategory().id === null ? 'selected' : ''
+                                                },
+                                                'Todas as categorias'
+                                            ),
+                                            categoryColumn(state.categories(), 0, Math.floor(_.size(state.categories()) / 2))
+                                        ]),
+                                        m('.explore-filter-select-col', [
+                                            categoryColumn(state.categories(), Math.floor(_.size(state.categories()) / 2), _.size(state.categories()))
+                                        ]),
+                                        m('a.modal-close.fa.fa-close.fa-lg.w-hidden-main.w-hidden-medium.w-inline-block', {
+                                            onclick: () => state.categoryToggle(false)
                                         })
                                     ])
                                 )
-                            ])
-                        ]
-                    )
+                            )
+                        ]),
+                    ]),
+                    m('div', [
+                        m('div.explore-text-fixed', 'localizados em'),
+                        m(InputSelectSearchClearable, {
+                            onSearch: onSearchCities,
+                            onSelect: onSelectCityState,
+                            selectedItem: selectedCityState,
+                            foundItems: foundCitiesStateEntries,
+                            itemToString: (/** @type {CityState} */ cityState) => {
+                                const firstPart = `${cityState.city ? cityState.city.name : cityState.state.state_name}`;
+                                const secondPart = `${cityState.city ? cityState.state.acronym : '(Estado)'}`;
+                                return `${firstPart}, ${secondPart}`; 
+                            }
+                        }),
+                        (
+                            state.showFilter() && 
+                            [
+                                m('.explore-text-fixed',
+                                    'que são'
+                                ),
+                                m('.explore-filter-wrapper', [
+                                    m('.explore-span-filter', {
+                                        onclick: () => state.filterToggle(!state.filterToggle())
+                                    }, [
+                                        m('.explore-mobile-label',
+                                            'FILTRO'
+                                        ),
+                                        m('.inline-block',
+                                            state.currentFilter().nicename
+                                        ),
+                                        m('.inline-block.fa.fa-angle-down')
+                                    ]),
+                                    (
+                                        state.filterToggle() &&
+                                        m('.explore-filter-select', [
+                                            _.map(state.projectFiltersVM.getContextFilters(), (pageFilter, idx) => m("a.explore-filter-link[href=\'javascript:void(0);\']", {
+                                                    onclick: (/** @type {Event} */ event) => {
+                                                        event.preventDefault();
+                                                        state.changeFilter(pageFilter.keyName);
+                                                        state.filterToggle(false);
+                                                    },
+                                                    class: state.currentFilter() === pageFilter ? 'selected' : ''
+                                                },
+                                                pageFilter.nicename
+                                            )),
+                                            m('a.modal-close.fa.fa-close.fa-lg.w-hidden-main.w-hidden-medium.w-inline-block', {
+                                                onclick: () => state.filterToggle(false)
+                                            })
+                                        ])
+                                    )
+                                ])
+                            ]
+                        )
+                    ])
                 ])
             ]), !state.projects().isLoading() && _.isFunction(state.projects().total) && !_.isUndefined(state.projects().total()) ?
             m('div',
