@@ -103,7 +103,14 @@ const projectsExplore = {
         };
 
         // Filter
-        const getDefaultFilter = () => h.paramByName('filter') || vnode.attrs.filter || 'projects_we_love';
+        const getDefaultFilter = () => {
+            const queryFilter = h.paramByName('filter');
+            if (queryFilter) {
+                return queryFilter || vnode.attrs.filter || 'projects_we_love';
+            } else {
+                return 'projects_we_love';
+            }
+        };
         const defaultFilter = getDefaultFilter();
         const currentFilter = h.RedrawStream(filtersMap[defaultFilter]);
         const filterToggle = h.RedrawStream(false);
@@ -316,7 +323,10 @@ const projectsExplore = {
                                     isSelected: (item) => {
                                         return state.currentFilter().keyName === item.value;
                                     },
-                                    onSelect: (item) => state.changeFilter(item.value),
+                                    onSelect: (item) => {
+                                        console.log(item);
+                                        state.changeFilter(item.value)
+                                    },
                                 }),
                             ]
                         )
