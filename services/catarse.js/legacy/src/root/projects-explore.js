@@ -153,7 +153,7 @@ const projectsExplore = {
             }
         };
         const currentCityStateFilter = prop(catarse.filtersVM({}));
-        const initSetupCityState = () => {
+        const setupCityStateFromQueryParams = () => {
 
             const options = {};
             const city_name = h.paramByName('city_name');
@@ -175,11 +175,12 @@ const projectsExplore = {
             }
 
         };
-        initSetupCityState();
+        setupCityStateFromQueryParams();
 
         const configureCityState = () => {
             const cityName = h.paramByName('city_name') || vnode.attrs.city_name;
             const stateAcronym = h.paramByName('state_acronym') || vnode.attrs.state_acronym;            
+            setupCityStateFromQueryParams();
             
             if (cityName && stateAcronym) {
                 const filter = catarse
@@ -462,7 +463,7 @@ const projectsExplore = {
                                     label: ` ${projectsFoundOnCity() || 'Nenhum'} em ${selectedCityState().city.name}, ${selectedCityState().state.acronym}  `
                                 },
                                 {
-                                    label: ` ${state.projects().total() - projectsFoundOnCity()} em outras cidades de ${selectedCityState().state.acronym}`
+                                    label: ` ${(state.projects().total() - projectsFoundOnCity()) || 'Nenhum'} em outras cidades de ${selectedCityState().state.acronym}`
                                 }
                             ]
                         :
