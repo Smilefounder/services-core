@@ -195,6 +195,7 @@ const projectsExplore = {
                 currentCityStateFilter(filter);
 
                 const countProjectFromCityFilter = catarse.filtersVM({city_name:'eq'}).city_name(cityName);
+                const categoryFilter = filterFromRoute() || currentFilter;
 
                 const currentFiltersAndModeParamaters = _.extend(
                     currentFilter().keyName !== 'finished' ? 
@@ -212,7 +213,8 @@ const projectsExplore = {
                             pledged: 'desc'
                         }).parameters(),
                     currentMode().filter ? filtersMap[currentMode().keyName].filter.parameters() : {},
-                    countProjectFromCityFilter.parameters()
+                    countProjectFromCityFilter.parameters(),
+                    categoryFilter().filter.parameters()
                 );
                 
                 countProjects(currentFiltersAndModeParamaters).then(projectsFoundOnCity);
